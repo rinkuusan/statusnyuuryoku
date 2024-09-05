@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パラメーター割り振り</title>
+    <style>
+        .param-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .param-name {
+            width: 100px;
+        }
+        .param-value {
+            width: 50px;
+            text-align: right;
+        }
+        .buttons {
+            display: flex;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>パラメーター割り振り画面</h1>
+
+    <div>
+        <label for="level">レベル:</label>
+        <input type="number" id="level" min="0" max="30" value="0" oninput="updateMaxPoints()">
+        <button onclick="resetValues()">クリア</button>
+        <p>現在割り振り可能なポイント: <span id="available-points">0</span></p>
+    </div>
+
+    <div class="param-container">
+        <span class="param-name">HP</span>
+        <div class="buttons">
+            <button onclick="changeValue('hp', -10)">-</button>
+            <input type="number" min="0" value="0" id="hp-value" oninput="setInitialValue('hp')">
+            <button onclick="changeValue('hp', 10)">+</button>
+        </div>
+    </div>
+
+    <div class="param-container">
+        <span class="param-name">Power</span>
+        <div class="buttons">
+            <button onclick="changeValue('power', -10)">-</button>
+            <input type="number" min="0" value="0" id="power-value" oninput="setInitialValue('power')">
+            <button onclick="changeValue('power', 10)">+</button>
+        </div>
+    </div>
+
+    <div class="param-container">
+        <span class="param-name">Agility</span>
+        <div class="buttons">
+            <button onclick="changeValue('agility', -10)">-</button>
+            <input type="number" min="0" value="0" id="agility-value" oninput="setInitialValue('agility')">
+            <button onclick="changeValue('agility', 10)">+</button>
+        </div>
+    </div>
+
+    <div class="param-container">
+        <span class="param-name">Intelligence</span>
+        <div class="buttons">
+            <button onclick="changeValue('intelligence', -10)">-</button>
+            <input type="number" min="0" value="0" id="intelligence-value" oninput="setInitialValue('intelligence')">
+            <button onclick="changeValue('intelligence', 10)">+</button>
+        </div>
+    </div>
+
+    <div class="param-container">
+        <span class="param-name">Luck</span>
+        <div class="buttons">
+            <button onclick="changeValue('luck', -10)">-</button>
+            <input type="number" min="0" value="0" id="luck-value" oninput="setInitialValue('luck')">
+            <button onclick="changeValue('luck', 10)">+</button>
+        </div>
+    </div>
+
+    <div class="param-container">
+        <span class="param-name">Efficiency</span>
+        <div class="buttons">
+            <button onclick="changeValue('efficiency', -10)">-</button>
+            <input type="number" min="0" value="0" id="efficiency-value" oninput="setInitialValue('efficiency')">
+            <button onclick="changeValue('efficiency', 10)">+</button>
+        </div>
+    </div>
+
+    <script>
+        let maxPoints = 0;
+        let currentPoints = 0;
+        let previousLevel = 0;  // 前回のレベルを保存する変数
+        let initialValues = { hp: 0, power: 0, agility: 0, intelligence: 0, luck: 0, efficiency: 0 };  // 初期値を保持するオブジェクト
+
+        // パラメーター初期値を設定する関数
+        function setInitialValue(param) {
+            const input = document.getElementById(param + '-value');
+            initialValues[param] = parseInt(input.value);  // 初期値を保持
+            currentPoints = calculateTotalPoints();
+            document.getElementById("available-points").textContent = maxPoints - currentPoints;
+        }
+
+        // 値を変更する関数
+        function changeValue(param, delta) {
+            const input = document.getElementById(param + '-value');
+            const newValue = parseInt(input.value) + delta;
+            if (newValue >= initialValues[param] && currentPoints + delta <= maxPoints) {
+                input.value = newValue;
+                currentPoints = calculateTotalPoints();
+                document.getElementById("available-points").textContent = maxPoints - currentPoints;
+            }
+        }
+
+        function updateMaxPoints() {
+            const level = parseInt(document.getElementById("level").value);
+            let newPoints = 0;
+
+            // 前回のレベルとの差分を計算して増減
+            if (level > previousLevel) {
+                for (let i = previousLevel + 1; i <= level; i++) {
+                    newPoints += getPointsForLevel(i);
+                }
+            } else if (level < previousLevel) {
+                for (let i = previousLevel; i > level; i--) {
+                    newPoints -= getPointsForLevel(i);
+                }
+            }
+
+            maxPoints += newPoints;
+            previousLevel = level;  // 現在のレベルを保存
+
+            document.getElementById("available-points").textContent = maxPoints - currentPoints;
+        }
+
+        // レベルごとの割り振りポイントを返す関数
+        function getPointsForLevel(level) {
+            if (level >= 30) {
+                return 270;
+            } else if (level === 29) {
+                return 120;
+            } else if (level >= 21) {
+                return 80;
+            } else {
+                return 60;
+            }
+        }
+
+        function calculateTotalPoints() {
+            const paramIds = ["hp", "power", "agility", "intelligence", "luck", "efficiency"];
+            let total = 0;
+
+            paramIds.forEach(id => {
+                total += parseInt(document.getElementById(id + '-value').value) - initialValues[id];  // 初期値との差分だけを合計
+            });
+
+            return total;
+        }
+
+        // 全パラメーターとレベルをリセット
+        function resetValues() {
+            document.getElementById("level").value = 0;
+            maxPoints = 0;
+            currentPoints = 0;
+            previousLevel = 0;
+            const paramIds = ["hp", "power", "agility", "intelligence", "luck", "efficiency"];
+            paramIds.forEach(id => {
+                document.getElementById(id + '-value').value = 0;
+                initialValues[id] = 0;
+            });
+            document.getElementById("available-points").textContent = 0;
+        }
+    </script>
+</body>
+</html>
