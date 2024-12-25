@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>3色変換アプリ</title>
+  <style>
+    body { font-family: sans-serif; }
+    #originalCanvas, #processedCanvas {
+      border: 1px solid #ccc;
+      margin: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>画像3色変換アプリ</h1>
+  <input type="file" id="fileInput" accept="image/*">
+  <br>
+  <canvas id="originalCanvas"></canvas>
+  <canvas id="processedCanvas"></canvas>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const originalCanvas = document.getElementById('originalCanvas');
+    const processedCanvas = document.getElementById('processedCanvas');
+    const oCtx = originalCanvas.getContext('2d');
+    const pCtx = processedCanvas.getContext('2d');
+
+    fileInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          originalCanvas.width = img.width;
+          originalCanvas.height = img.height;
+          oCtx.drawImage(img, 0, 0);
+
+          // 処理用のCanvasも同じサイズ
+          processedCanvas.width = img.width;
+          processedCanvas.height = img.height;
+
+          // ピクセルデータを取得
+          const imageData = oCtx.getImageData(0, 0, img.width, img.height);
+          const data = imageData.data;
+
+          // 固定の3色を用意する場合 (例：オリーブRGB(133,118,59), 薄灰RGB(239,242,240), ダークブラウンRGB(61,45,23))
+          // あるいは自作のアルゴリズムでクラスタリングするなら、ここを変える
+          const palette = [
+            [133,118,59],   // color A
+            [239,242,240],  // color B
+            [61,45,23]      // color C
+          ];
+
+          // 各ピクセルごとに、最も近い色をpaletteから選んで置き換える
+          for(let i=0; i<data.length; i+=4) {
+            const r = data[i];
+            const g = data[i+1];
+            const b = data[i+2];
+
+            // 距離計算して最小の色を採用
+            let minDist = Infinity;
+            let chosenColor = [0,0,0];
+            for(const color of palette){
+              const dr = r - color[0];
+              const dg = g - color[1];
+              const db = b - color[2];
+              const dist = dr*dr + dg*dg + db*db; // 二乗距離でOK
+              if(dist < minDist){
+                minDist = dist;
+                chosenColor = color;
+              }
+            }
+            data[i] = chosenColor[0];
+            data[i+1] = chosenColor[1];
+            data[i+2] = chosenColor[2];
+            // alphaはそのまま
+          }
+
+          // 書き戻し
+          pCtx.putImageData(imageData, 0, 0);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  </script>
+</body>
+</html>
